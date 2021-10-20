@@ -46,6 +46,8 @@ def format_fails(fails: list[str]) -> str:
     return "Errors:\n" + "\n".join(fails)
 
 
+
+# Här har vi lagt testdatan som en fixture, kan hanteras på andra sätt
 @pytest.fixture
 def user_data():
     return {"name": "Testperson Testsson",
@@ -54,6 +56,9 @@ def user_data():
             "status": "active"}
 
 
+# Följande fixture skapar en ny användare baserat på datan i user_data
+# vi får som resultat det responseobjekt som skapas vid anrop mot APIet
+# Användaren kommer automatiskt att tas bort när testet är klart
 @pytest.fixture
 def user_request(user_data, header) -> requests.Response:
     result = requests.post(GOREST_USERS, data=user_data, headers=header)
@@ -61,18 +66,34 @@ def user_request(user_data, header) -> requests.Response:
     requests.delete(GOREST_USERS + f"/{result.json()['data']['id']}",
                     headers=header)
 
+
+# Följande fixture använder user_request fixturen men "packar upp" datan och skapar en instans av User-klassen som
+# vi får tillgång till om vi använder fixturen
 @pytest.fixture
 def user(user_request) -> User:
     yield User(**user_request.json()['data'])
 
 
+# Ett mycket enkelt test som kontrollerar om vi fick rätt svarskod när vi skapar en ny användare
 def test_user_request(user_request):
     assert user_request.status_code == HTTPStatus.CREATED
 
+
+# Ett simpelt test där vi kontrollerar att innehållet i den respons vi får när vi skapar en ny
+# user matchar den data vi skickade
 def test_user_content(user, user_data):
     assert user.name == user_data['name']
 
 
+# Här är ett lite mer utförligt test där vi inte nyttjar en fixtur för att skapa ny användare'
+# Vi tvingas därför att själva ta bort användaren i slutet av testet.
+# Var uppmärksamma på hur den typen av kod är placerad i förhållande till asserts!
+# Om en assert fallerar kommer körningen av testet att stanna och eventuell kod efter
+# asserten kommer inte köras.
+# I det här testet vill vi kontrollera flera saker och för att undvika ovan nämnda problem
+# med att körningen avbryts när en assert fallerar gör vi istället motsvarande kontroller
+# med hjälp av vanliga if-satser och sparar resultatet i en lista.
+# I slutet av testet görs istället en assert på att listan med fel är tom.
 def test_create_user(user_data, header):
     fails = []
     result = requests.post(GOREST_USERS, data=user_data, headers=header)

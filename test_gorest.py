@@ -15,6 +15,7 @@ class User:
     gender: str
     status: str
 
+
 # Ett test kan delas in i 3-4 olika delar
 # 1. Arrange arrangera,
 # 2. Act, agera, interagera med SUT
@@ -45,9 +46,9 @@ def header(api_token) -> dict:
 @pytest.fixture
 def user_data():
     return {"name": "Testperson Testsson",
-              "email": "enasdf@mladres4s.se",
-              "gender": "male",
-              "status": "active"}
+            "email": "enasdf@mladres4s.se",
+            "gender": "male",
+            "status": "active"}
 
 
 @pytest.fixture
